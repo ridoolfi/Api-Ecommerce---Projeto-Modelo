@@ -148,9 +148,19 @@ router.delete('/', (req, res, next) => {
             (error, result, fields) => {
                 conn.release();
                 if(error) {return res.status(500).send({ error: error })}
-                res.status(202).send({
-                    mensagem: "Produto deletado com sucesso"
-                });
+                const response = {
+                    mensagem: "Produto deletado com sucesso",
+                    request: {
+                        tipo: "POST",
+                        descricao: 'Insere um produto',
+                        url: 'http://localhost:3000/produtos',
+                        body: {
+                            nome: 'String',
+                            preco: 'Number'
+                        }
+                    }
+                }
+                res.status(202).send(response);
             }
             )
     })
