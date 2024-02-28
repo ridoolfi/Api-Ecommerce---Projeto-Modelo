@@ -1,3 +1,5 @@
+
+
 const express = require('express')
 const router = express.Router();
 const mysql = require('../mysql').pool
@@ -8,10 +10,10 @@ router.get('/', (req, res, next) => {
         if(error){return res.status(500).send({error: error})}
         conn.query(
              `SELECT pedido.idpedido,
-                        pedido.quantidade,
-                        produtos.idprodutos,
-                        produtos.nome,
-                        produtos.preco
+                     pedido.quantidade,
+                     produtos.idprodutos,
+                     produtos.nome,
+                     produtos.preco
                 FROM pedido
           INNER JOIN produtos
                   ON produtos.idprodutos  = pedido.idprodutos;`,
@@ -120,8 +122,8 @@ router.get('/:id_pedido', (req, res, next) => {
    )
 
     }
-    )
-   })
+    );
+   });
 
 // Edita um pedido
 router.patch('/', (req, res, next) => {

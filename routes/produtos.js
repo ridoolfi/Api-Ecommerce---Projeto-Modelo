@@ -1,7 +1,34 @@
 const express = require('express')
 const router = express.Router();
 const mysql = require('../mysql').pool
+const multer = require('multer')
+const login = require('../middleware/login')
 
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, './uploads')
+    },
+    filename: function(req, file, cb){
+        cb(null, new Date().toISOString().substring(0, 12) + file.originalname);
+    }
+})
+
+const fileFilter = (req, file, cb) => {
+    if(file.mimetype ==='image/jpeg' || file.mimetype === 'image.png'){
+    cb(null, true)
+}else{ 
+    cb(null, false) 
+}
+    
+};
+
+const upload = multer({ 
+    storage: storage,
+    limits: {
+        fileSize: 1024 * 1024 *10
+    },
+    fileFilter: fileFilter
+})
 // RETORNA TODOS OS PRODUTOS
 router.get('/', (req, res, next) => {
     mysql.getConnection((error, conn) => {
@@ -18,6 +45,7 @@ router.get('/', (req, res, next) => {
                             id_produto: prod.idprodutos,
                             nome: prod.nome,
                             preco: prod.preco,
+                            imagem_produto: prod.imagem_produto,
                             request: {
                                 tipo: 'GET',
                                 descricao: 'Retorna todos os produtos',
@@ -33,13 +61,15 @@ router.get('/', (req, res, next) => {
 });
 
 // INSERI UM PRODUTO
-router.post('/', (req, res, next) => {
-
+router.post('/', login, upload.single('produto_imagem'),(req, res, next) => {
+    console.log(req.file);
     mysql.getConnection((error, conn) => {
         if(error) { return res.status(500).send({ error: error})}
         conn.query(
-            'INSERT INTO produtos (nome, preco) VALUES (?, ?)',
-            [req.body.nome, req.body.preco],
+            'INSERT INTO produtos (nome, preco, imagem_produto) VALUES (?, ?, ?)',
+            [req.body.nome,
+             req.body.preco,
+             req.file.path],
             (error, result, fields) => {
                 conn.release();
 
@@ -50,6 +80,7 @@ router.post('/', (req, res, next) => {
                         id_produto: result.insertId,
                         nome: req.body.nome,
                         preco: req.body.preco,
+                        imagem_produto: req.file.path,
                         request: {
                             tipo: 'POST',
                             descricao: 'Insere novos produtos',
@@ -67,7 +98,7 @@ router.post('/', (req, res, next) => {
 router.get('/:id_produto', (req, res, next) => {
     mysql.getConnection((error, conn) => {
         conn.query(
-            'SELECT * FROM produtos WHERE idprodutos = ?;',
+            'SELECT * FROM produtos WHERE idprodutos = ?;'
             [req.params.id_produto],
             (error, result, fields) => {
                 conn.release()
@@ -86,6 +117,7 @@ router.get('/:id_produto', (req, res, next) => {
                         id_produto: result[0].idprodutos,
                         nome: result[0].nome,
                         preco: result[0].preco,
+                        imagem_produto: result[0].imagem_produto,
                         request: {
                             tipo: 'GET',
                             descricao: 'Retorna todos os produtos',
